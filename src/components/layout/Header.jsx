@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +12,20 @@ import {
 import { Bell, UserCircle, LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function Header({ user, sidebarCollapsed, notifications = [], onMobileToggle }) {
+export default function Header({
+  user,
+  sidebarCollapsed,
+  notifications = [],
+  onMobileToggle,
+}) {
+  const navigate = useNavigate();
   const { logout } = useAuth();
-  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = "/login";
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -29,7 +36,11 @@ export default function Header({ user, sidebarCollapsed, notifications = [], onM
       )}
     >
       <div className="flex items-center gap-3">
-        <button onClick={onMobileToggle} className="md:hidden p-2 rounded-lg hover:bg-accent">
+        <button
+          type="button"
+          onClick={onMobileToggle}
+          className="md:hidden p-2 rounded-lg hover:bg-accent"
+        >
           <Menu className="w-5 h-5" />
         </button>
       </div>
@@ -76,7 +87,10 @@ export default function Header({ user, sidebarCollapsed, notifications = [], onM
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors">
+            <button
+              type="button"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors"
+            >
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <UserCircle className="w-5 h-5 text-primary" />
               </div>
