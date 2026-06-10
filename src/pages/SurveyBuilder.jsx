@@ -156,15 +156,46 @@ export default function SurveyBuilder() {
         return;
       }
 
-      const { error } = await supabase.from("surveys").insert(payload);
+      const { data: createdSurvey, error } = await supabase
+        .from("surveys")
+        .insert(payload)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      if (status === "active" && createdSurvey?.id) {
+        const { data: emailData, error: emailError } =
+          await supabase.functions.invoke("send-survey-notification", {
+            body: {
+              survey_id: createdSurvey.id,
+              app_url: window.location.origin,
+            },
+          });
+
+        if (emailError) {
+          console.error("Erro ao enviar emails:", emailError);
+          toast.warning("Questionário criado, mas houve erro ao enviar os emails.");
+        } else if (emailData?.errors?.length > 0) {
+          console.warn("Alguns emails falharam:", emailData.errors);
+          toast.warning(
+            `Questionário criado. Emails enviados: ${emailData.sent}/${emailData.total}.`
+          );
+        } else {
+          toast.success(
+            `Questionário criado e ${emailData?.sent || 0} email(s) enviado(s).`
+          );
+        }
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["surveys"] });
       queryClient.invalidateQueries({ queryKey: ["survey", id] });
 
-      toast.success(isEdit ? "Questionário atualizado." : "Questionário criado.");
+      if (variables.status !== "active") {
+        toast.success(isEdit ? "Questionário atualizado." : "Questionário criado.");
+      }
+
       navigate("/surveys");
     },
     onError: (err) => {
