@@ -146,58 +146,114 @@ export default function SurveyBuilder() {
         created_by_id: employee?.id || null,
       };
 
+      let savedSurvey = null;
+
       if (isEdit) {
-        const { error } = await supabase
+        const { data: updatedSurvey, error } = await supabase
           .from("surveys")
           .update(payload)
-          .eq("id", id);
+          .eq("id", id)
+          .select()
+          .single();
 
         if (error) throw error;
-        return;
+
+        savedSurvey = updatedSurvey;
+      } else {
+        const { data: createdSurvey, error } = await supabase
+          .from("surveys")
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        savedSurvey = createdSurvey;
       }
 
-      const { data: createdSurvey, error } = await supabase
-        .from("surveys")
-        .insert(payload)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (status === "active" && createdSurvey?.id) {
+      if (status === "active" && savedSurvey?.id) {
         const { data: emailData, error: emailError } =
           await supabase.functions.invoke("send-survey-notification", {
             body: {
-              survey_id: createdSurvey.id,
+              survey_id: savedSurvey.id,
               app_url: window.location.origin,
             },
           });
 
         if (emailError) {
           console.error("Erro ao enviar emails:", emailError);
-          toast.warning("Questionário criado, mas houve erro ao enviar os emails.");
-        } else if (emailData?.errors?.length > 0) {
-          console.warn("Alguns emails falharam:", emailData.errors);
-          toast.warning(
-            `Questionário criado. Emails enviados: ${emailData.sent}/${emailData.total}.`
-          );
-        } else {
-          toast.success(
-            `Questionário criado e ${emailData?.sent || 0} email(s) enviado(s).`
-          );
+
+          return {
+            savedSurvey,
+            emailStatus: "error",
+            emailError,
+          };
         }
+
+        if (emailData?.error) {
+          console.error("Erro da função de email:", emailData.error);
+
+          return {
+            savedSurvey,
+            emailStatus: "error",
+            emailError: emailData.error,
+          };
+        }
+
+        if (emailData?.errors?.length > 0) {
+          console.warn("Alguns emails falharam:", emailData.errors);
+
+          return {
+            savedSurvey,
+            emailStatus: "partial",
+            emailData,
+          };
+        }
+
+        return {
+          savedSurvey,
+          emailStatus: "sent",
+          emailData,
+        };
       }
+
+      return {
+        savedSurvey,
+        emailStatus: "not_sent",
+      };
     },
-    onSuccess: (_result, variables) => {
+
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["surveys"] });
       queryClient.invalidateQueries({ queryKey: ["survey", id] });
 
-      if (variables.status !== "active") {
+      if (variables.status === "active") {
+        if (result?.emailStatus === "sent") {
+          toast.success(
+            `Questionário publicado. Emails enviados: ${
+              result.emailData?.sent || 0
+            }/${result.emailData?.total || 0}.`
+          );
+        } else if (result?.emailStatus === "partial") {
+          toast.warning(
+            `Questionário publicado. Emails enviados: ${
+              result.emailData?.sent || 0
+            }/${result.emailData?.total || 0}.`
+          );
+        } else if (result?.emailStatus === "error") {
+          toast.warning(
+            "Questionário publicado, mas houve erro ao enviar os emails."
+          );
+        } else {
+          toast.success("Questionário publicado.");
+        }
+      } else {
         toast.success(isEdit ? "Questionário atualizado." : "Questionário criado.");
       }
 
       navigate("/surveys");
     },
+
     onError: (err) => {
       console.error(err);
       toast.error(err.message || "Erro ao guardar questionário.");
@@ -234,7 +290,9 @@ export default function SurveyBuilder() {
   const removeQuestion = (index) => {
     setForm({
       ...form,
-      questions: form.questions.filter((_, questionIndex) => questionIndex !== index),
+      questions: form.questions.filter(
+        (_, questionIndex) => questionIndex !== index
+      ),
     });
   };
 
@@ -280,7 +338,7 @@ export default function SurveyBuilder() {
     setForm({
       ...form,
       target_sector_ids: current.includes(sectorId)
-        ? current.filter((id) => id !== sectorId)
+        ? current.filter((selectedId) => selectedId !== sectorId)
         : [...current, sectorId],
     });
   };
@@ -291,7 +349,7 @@ export default function SurveyBuilder() {
     setForm({
       ...form,
       target_position_ids: current.includes(positionId)
-        ? current.filter((id) => id !== positionId)
+        ? current.filter((selectedId) => selectedId !== positionId)
         : [...current, positionId],
     });
   };
@@ -302,7 +360,7 @@ export default function SurveyBuilder() {
     setForm({
       ...form,
       target_user_ids: current.includes(userId)
-        ? current.filter((id) => id !== userId)
+        ? current.filter((selectedId) => selectedId !== userId)
         : [...current, userId],
     });
   };
@@ -356,7 +414,9 @@ export default function SurveyBuilder() {
             key={question.id}
             question={question}
             index={index}
-            onChange={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
+            onChange={(updatedQuestion) =>
+              updateQuestion(index, updatedQuestion)
+            }
             onRemove={() => removeQuestion(index)}
           />
         ))}
