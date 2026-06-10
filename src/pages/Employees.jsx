@@ -90,52 +90,78 @@ export default function Employees() {
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const employeeNumber = data.employee_number
-        ? Number(data.employee_number)
-        : null;
+const createMutation = useMutation({
+  mutationFn: async (data) => {
+    const employeeNumber = data.employee_number
+      ? Number(data.employee_number)
+      : null;
 
-      const { data: employee, error } = await supabase
-        .from("employees")
-        .insert({
-          employee_number: employeeNumber,
-          full_name: data.full_name.trim(),
-          email: data.email.trim().toLowerCase(),
-          sector_id: data.sector_id || null,
-          role: data.role || "user",
-        })
-        .select()
-        .single();
+    const cleanEmail = data.email.trim().toLowerCase();
 
-      if (error) throw error;
+    const { data: employee, error } = await supabase
+      .from("employees")
+      .insert({
+        employee_number: employeeNumber,
+        full_name: data.full_name.trim(),
+        email: cleanEmail,
+        sector_id: data.sector_id || null,
+        role: data.role || "user",
+      })
+      .select()
+      .single();
 
-      if (data.position_ids?.length > 0) {
-        const rows = data.position_ids.map((positionId) => ({
+    if (error) throw error;
+
+    if (data.position_ids?.length > 0) {
+      const rows = data.position_ids.map((positionId) => ({
+        employee_id: employee.id,
+        position_id: positionId,
+      }));
+
+      const { error: positionsError } = await supabase
+        .from("employee_positions")
+        .insert(rows);
+
+      if (positionsError) throw positionsError;
+    }
+
+    const { data: inviteData, error: inviteError } =
+      await supabase.functions.invoke("invite-employee", {
+        body: {
+          email: cleanEmail,
           employee_id: employee.id,
-          position_id: positionId,
-        }));
+          full_name: data.full_name.trim(),
+          redirect_to: `${window.location.origin}/reset-password`,
+        },
+      });
 
-        const { error: positionsError } = await supabase
-          .from("employee_positions")
-          .insert(rows);
+    if (inviteError) {
+      console.error("Erro ao enviar convite:", inviteError);
+      throw new Error(
+        "Funcionário criado, mas houve erro ao enviar o email de convite."
+      );
+    }
 
-        if (positionsError) throw positionsError;
-      }
+    if (inviteData?.error) {
+      console.error("Erro da função invite-employee:", inviteData.error);
+      throw new Error(
+        "Funcionário criado, mas houve erro ao enviar o email de convite."
+      );
+    }
 
-      return employee;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employees"] });
-      setDialogOpen(false);
-      setForm({});
-      toast.success("Funcionário criado com sucesso.");
-    },
-    onError: (err) => {
-      console.error(err);
-      toast.error(err.message || "Erro ao criar funcionário.");
-    },
-  });
+    return employee;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["employees"] });
+    setDialogOpen(false);
+    setForm({});
+    toast.success("Funcionário criado e convite enviado por email.");
+  },
+  onError: (err) => {
+    console.error(err);
+    toast.error(err.message || "Erro ao criar funcionário.");
+  },
+});
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
