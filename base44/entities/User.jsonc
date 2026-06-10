@@ -1,0 +1,48 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "Papel no sistema"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Nome completo do funcion\u00e1rio (preenchido pelo administrador)"
+    },
+    "employee_number": {
+      "type": "string",
+      "description": "N\u00famero de funcion\u00e1rio"
+    },
+    "sector_id": {
+      "type": "string",
+      "description": "ID do setor"
+    },
+    "position_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos cargos atribu\u00eddos"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Estado do funcion\u00e1rio"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL da foto de perfil"
+    }
+  },
+  "required": []
+}

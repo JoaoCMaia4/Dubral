@@ -1,0 +1,28 @@
+{
+  "name": "SurveyResponse",
+  "type": "object",
+  "properties": {
+    "survey_id": {
+      "type": "string",
+      "description": "ID do question\u00e1rio"
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_id": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Respostas \u00e0s perguntas"
+    }
+  },
+  "required": [
+    "survey_id"
+  ]
+}

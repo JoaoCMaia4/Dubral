@@ -1,0 +1,125 @@
+{
+  "name": "Survey",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do question\u00e1rio"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do question\u00e1rio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "closed",
+        "scheduled"
+      ],
+      "default": "draft",
+      "description": "Estado do question\u00e1rio"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "min_value": {
+            "type": "number"
+          },
+          "max_value": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Perguntas do question\u00e1rio"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "all",
+        "sector",
+        "position",
+        "specific"
+      ],
+      "default": "all",
+      "description": "Tipo de destinat\u00e1rios"
+    },
+    "target_sector_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos setores destinat\u00e1rios"
+    },
+    "target_position_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos cargos destinat\u00e1rios"
+    },
+    "target_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos funcion\u00e1rios destinat\u00e1rios"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e hora de in\u00edcio"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e hora de fim"
+    },
+    "is_template": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se \u00e9 um modelo"
+    },
+    "template_name": {
+      "type": "string",
+      "description": "Nome do modelo"
+    },
+    "response_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Contagem de respostas"
+    },
+    "reminder_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o email de lembrete j\u00e1 foi enviado"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
