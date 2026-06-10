@@ -35,9 +35,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className="text-4xl font-bold tracking-tight text-primary mb-5">
-            DUBRAL
-          </div>
+          <img
+            src="/images/dubral-logo.jpg"
+            alt="DUBRAL"
+            className="h-16 mx-auto mb-5 object-contain"
+          />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Bem-vindo
           </h1>

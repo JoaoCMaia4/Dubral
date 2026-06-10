@@ -67,9 +67,11 @@ export default function Sidebar({ user, positions, collapsed, onToggle }) {
             <span className="text-lg font-bold text-primary-foreground">D</span>
           </div>
         ) : (
-          <div className="font-bold text-lg text-primary">
-            DUBRAL
-          </div>
+          <img
+            src="/images/dubral-logo.jpg"
+            alt="DUBRAL"
+            className="h-10 object-contain"
+          />
         )}
       </div>
 
