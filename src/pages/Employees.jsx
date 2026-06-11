@@ -136,18 +136,40 @@ const createMutation = useMutation({
       });
 
     if (inviteError) {
-      console.error("Erro ao enviar convite:", inviteError);
-      throw new Error(
-        "Funcionário criado, mas houve erro ao enviar o email de convite."
-      );
-    }
+  console.error("Erro ao enviar convite:", inviteError);
 
-    if (inviteData?.error) {
-      console.error("Erro da função invite-employee:", inviteData.error);
-      throw new Error(
-        "Funcionário criado, mas houve erro ao enviar o email de convite."
-      );
-    }
+  throw new Error(
+    inviteError.message ||
+      "Funcionário criado, mas houve erro ao enviar o email de convite."
+  );
+}
+
+if (inviteData?.error) {
+  console.error("Erro da função invite-employee:", inviteData.error);
+
+  const errorMessage = String(inviteData.error).toLowerCase();
+
+  if (
+    errorMessage.includes("already been registered") ||
+    errorMessage.includes("already registered") ||
+    errorMessage.includes("already exists")
+  ) {
+    throw new Error(
+      "Este email já tem uma conta criada. Apague o utilizador em Authentication > Users ou use outro email."
+    );
+  }
+
+  if (errorMessage.includes("rate limit")) {
+    throw new Error(
+      "Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente."
+    );
+  }
+
+  throw new Error(
+    inviteData.error ||
+      "Funcionário criado, mas houve erro ao enviar o email de convite."
+  );
+}
 
     return employee;
   },
