@@ -90,100 +90,100 @@ export default function Employees() {
     },
   });
 
-const createMutation = useMutation({
-  mutationFn: async (data) => {
-    const employeeNumber = data.employee_number
-      ? Number(data.employee_number)
-      : null;
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      const employeeNumber = data.employee_number
+        ? Number(data.employee_number)
+        : null;
 
-    const cleanEmail = data.email.trim().toLowerCase();
+      const cleanEmail = data.email.trim().toLowerCase();
 
-    const { data: employee, error } = await supabase
-      .from("employees")
-      .insert({
-        employee_number: employeeNumber,
-        full_name: data.full_name.trim(),
-        email: cleanEmail,
-        sector_id: data.sector_id || null,
-        role: data.role || "user",
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    if (data.position_ids?.length > 0) {
-      const rows = data.position_ids.map((positionId) => ({
-        employee_id: employee.id,
-        position_id: positionId,
-      }));
-
-      const { error: positionsError } = await supabase
-        .from("employee_positions")
-        .insert(rows);
-
-      if (positionsError) throw positionsError;
-    }
-
-    const { data: inviteData, error: inviteError } =
-      await supabase.functions.invoke("invite-employee", {
-        body: {
-          email: cleanEmail,
-          employee_id: employee.id,
+      const { data: employee, error } = await supabase
+        .from("employees")
+        .insert({
+          employee_number: employeeNumber,
           full_name: data.full_name.trim(),
-          redirect_to: `${window.location.origin}/reset-password`,
-        },
-      });
+          email: cleanEmail,
+          sector_id: data.sector_id || null,
+          role: data.role || "user",
+        })
+        .select()
+        .single();
 
-    if (inviteError) {
-  console.error("Erro ao enviar convite:", inviteError);
+      if (error) throw error;
 
-  throw new Error(
-    inviteError.message ||
-      "Funcionário criado, mas houve erro ao enviar o email de convite."
-  );
-}
+      if (data.position_ids?.length > 0) {
+        const rows = data.position_ids.map((positionId) => ({
+          employee_id: employee.id,
+          position_id: positionId,
+        }));
 
-if (inviteData?.error) {
-  console.error("Erro da função invite-employee:", inviteData.error);
+        const { error: positionsError } = await supabase
+          .from("employee_positions")
+          .insert(rows);
 
-  const errorMessage = String(inviteData.error).toLowerCase();
+        if (positionsError) throw positionsError;
+      }
 
-  if (
-    errorMessage.includes("already been registered") ||
-    errorMessage.includes("already registered") ||
-    errorMessage.includes("already exists")
-  ) {
-    throw new Error(
-      "Este email já tem uma conta criada. Apague o utilizador em Authentication > Users ou use outro email."
-    );
-  }
+      const { data: inviteData, error: inviteError } =
+        await supabase.functions.invoke("invite-employee", {
+          body: {
+            email: cleanEmail,
+            employee_id: employee.id,
+            full_name: data.full_name.trim(),
+            redirect_to: `${window.location.origin}/reset-password`,
+          },
+        });
 
-  if (errorMessage.includes("rate limit")) {
-    throw new Error(
-      "Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente."
-    );
-  }
+      if (inviteError) {
+        console.error("Erro ao enviar convite:", inviteError);
 
-  throw new Error(
-    inviteData.error ||
-      "Funcionário criado, mas houve erro ao enviar o email de convite."
-  );
-}
+        throw new Error(
+          inviteError.message ||
+            "Funcionário criado, mas houve erro ao enviar o email de convite."
+        );
+      }
 
-    return employee;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["employees"] });
-    setDialogOpen(false);
-    setForm({});
-    toast.success("Funcionário criado e convite enviado por email.");
-  },
-  onError: (err) => {
-    console.error(err);
-    toast.error(err.message || "Erro ao criar funcionário.");
-  },
-});
+      if (inviteData?.error) {
+        console.error("Erro da função invite-employee:", inviteData.error);
+
+        const errorMessage = String(inviteData.error).toLowerCase();
+
+        if (
+          errorMessage.includes("already been registered") ||
+          errorMessage.includes("already registered") ||
+          errorMessage.includes("already exists")
+        ) {
+          throw new Error(
+            "Este email já tem uma conta criada. Apague o utilizador em Authentication > Users ou use outro email."
+          );
+        }
+
+        if (errorMessage.includes("rate limit")) {
+          throw new Error(
+            "Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente."
+          );
+        }
+
+        throw new Error(
+          inviteData.error ||
+            "Funcionário criado, mas houve erro ao enviar o email de convite."
+        );
+      }
+
+      return employee;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      setDialogOpen(false);
+      setForm({});
+      toast.success("Funcionário criado e convite enviado por email.");
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(err.message || "Erro ao criar funcionário.");
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
@@ -238,18 +238,31 @@ if (inviteData?.error) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from("employees")
-        .delete()
-        .eq("id", id);
+    mutationFn: async (employeeId) => {
+      const { data, error } = await supabase.functions.invoke("delete-employee", {
+        body: {
+          employee_id: employeeId,
+        },
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao apagar funcionário:", error);
+        throw new Error(
+          error.message || "Não foi possível apagar o funcionário."
+        );
+      }
+
+      if (data?.error) {
+        console.error("Erro da função delete-employee:", data.error);
+        throw new Error(data.error);
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       setDeleteTarget(null);
-      toast.success("Funcionário apagado.");
+      toast.success("Funcionário apagado da aplicação e do Authentication.");
     },
     onError: (err) => {
       console.error(err);
@@ -633,17 +646,21 @@ if (inviteData?.error) {
             <AlertDialogDescription>
               Tem a certeza que pretende apagar{" "}
               <strong>{deleteTarget?.full_name || deleteTarget?.email}</strong>?
-              Esta ação remove o registo do funcionário da aplicação.
+              Esta ação remove o funcionário da aplicação e também apaga a conta de login
+              associada no Supabase Authentication.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => deleteMutation.mutate(deleteTarget.id)}
+              disabled={deleteMutation.isPending}
             >
-              Apagar
+              {deleteMutation.isPending ? "A apagar..." : "Apagar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
