@@ -206,7 +206,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "DUBRAL <onboarding@resend.dev>",
+          from: "DUBRAL <noreply@dubral.dedyn.io>",
           to: employee.email,
           subject,
           html,
