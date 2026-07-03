@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   FileText,
   Users,
-  BarChart3,
   Clock,
   Bell,
   ArrowRight,
@@ -117,11 +116,6 @@ export default function Dashboard() {
     (survey) => !respondedIds.has(survey.id)
   );
 
-  const totalResponses = surveys.reduce(
-    (sum, survey) => sum + (survey.response_count || 0),
-    0
-  );
-
   const recentNotifications = (notifications || []).slice(0, 5);
 
   return (
@@ -149,13 +143,6 @@ export default function Dashboard() {
           value={pendingSurveys.length}
           icon={Clock}
           color="bg-warning"
-        />
-
-        <StatCard
-          title="Respostas Recebidas"
-          value={totalResponses}
-          icon={BarChart3}
-          color="bg-success"
         />
 
         {canManageEmployees && (
