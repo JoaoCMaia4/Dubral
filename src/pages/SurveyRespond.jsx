@@ -63,7 +63,12 @@ export default function SurveyRespond() {
   const now = new Date();
   const isExpired = survey?.end_date && new Date(survey.end_date) < now;
   const isNotStarted = survey?.start_date && new Date(survey.start_date) > now;
-  const canRespond = survey?.status === "active" && !isExpired && !isNotStarted;
+  const isArchived = survey?.status === "archived";
+
+  const canRespond =
+    survey?.status === "active" &&
+    !isExpired &&
+    !isNotStarted;
 
   useEffect(() => {
     if (isEditing && existingResponse?.answers) {
@@ -169,7 +174,9 @@ export default function SurveyRespond() {
             <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-2" />
             <CardTitle>Já respondeu a este questionário</CardTitle>
             <p className="text-muted-foreground mt-1">
-              Aqui estão as suas respostas.
+              {isArchived
+                ? "Este questionário está arquivado. Pode consultar a sua resposta, mas já não a pode editar."
+                : "Aqui estão as suas respostas."}
             </p>
 
             {survey?.end_date && (
@@ -198,7 +205,7 @@ export default function SurveyRespond() {
               );
             })}
 
-            {canRespond && (
+            {canRespond && !isArchived && (
               <Button
                 onClick={() => setIsEditing(true)}
                 variant="outline"
@@ -236,7 +243,7 @@ export default function SurveyRespond() {
     );
   }
 
-  if (isExpired) {
+  if (isExpired && !alreadyResponded) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" onClick={() => navigate("/surveys")}>

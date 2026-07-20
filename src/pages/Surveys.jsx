@@ -252,8 +252,12 @@ export default function Surveys() {
 
   if (!canViewAll) {
     visibleSurveys = surveys.filter((survey) => {
-      if (survey.status === "archived") return false;
+      // Se estiver arquivado, só aparece para quem respondeu
+      if (survey.status === "archived") {
+        return respondedIds.has(survey.id);
+      }
 
+      // Quem criou o questionário continua a vê-lo
       if (survey.created_by_id === employee?.id && canCreate) {
         return true;
       }
@@ -464,13 +468,12 @@ export default function Surveys() {
                       {hasResponded &&
                         (!isWithinDateRange(survey) ||
                           effectiveStatus !== "active") && (
-                          <Badge
-                            variant="outline"
-                            className="bg-success/5 text-success border-success/20"
-                          >
-                            Respondido
-                          </Badge>
-                        )}
+                          <Link to={`/surveys/${survey.id}/respond`}>
+                            <Button variant="outline" size="sm">
+                              Ver Resposta
+                            </Button>
+                          </Link>
+                      )}
 
                       {canSeeResults(survey) && (
                         <Link to={`/surveys/${survey.id}/results`}>
