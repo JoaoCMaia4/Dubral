@@ -5,6 +5,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const META_COLUMNS = [
   { key: "employee_number", label: "Nº Funcionário", defaultOn: true },
@@ -117,31 +118,75 @@ export default function ExportColumnsModal({
       });
     });
 
-    const csv = [headers, ...rows]
-      .map((row) =>
-        row
-          .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
-          .join(";")
-      )
-      .join("\n");
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      headers,
+      ...rows,
+    ]);
 
-    const blob = new Blob(["\ufeff" + csv], {
-      type: "text/csv;charset=utf-8",
+    const workbook = XLSX.utils.book_new();
+    const statisticsRows = [];
+
+    (survey.questions || []).forEach((question) => {
+
+      if (
+        ![
+          "multiple_choice",
+          "checkbox",
+          "dropdown",
+          "yes_no",
+          "scale",
+        ].includes(question.type)
+      ) {
+        return;
+      }
+
+      statisticsRows.push([question.title]);
+      statisticsRows.push(["Opção", "Nº Respostas"]);
+
+      const counts = {};
+
+      responses.forEach((response) => {
+
+        const answer = response.answers?.[question.id];
+
+        if (!answer) return;
+
+        const values = Array.isArray(answer)
+          ? answer
+          : [answer];
+
+        values.forEach((value) => {
+          counts[value] = (counts[value] || 0) + 1;
+        });
+
+      });
+
+      Object.entries(counts).forEach(([option, total]) => {
+        statisticsRows.push([option, total]);
+      });
+
+      statisticsRows.push([]);
     });
 
-    const fileName = `${survey.title || "questionario"} - Resultados.csv`
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Respostas"
+    );
+
+    const statisticsSheet = XLSX.utils.aoa_to_sheet(statisticsRows);
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      statisticsSheet,
+      "Estatísticas"
+    );
+
+    const fileName = `${survey.title || "questionario"} - Resultados.xlsx`
       .replace(/[\\/:*?"<>|]/g, "-");
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    XLSX.writeFile(workbook, fileName);
 
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
     onClose();
   };
 
