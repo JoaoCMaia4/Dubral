@@ -67,11 +67,16 @@ export default function SurveyResults() {
             )
           )
         `)
-        .eq("survey_id", id)
-        .order("created_at", { ascending: false });
+        .eq("survey_id", id);
 
       if (error) throw error;
-      return data || [];
+
+      // Ordena pela data da última alteração (se existir)
+      return (data || []).sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at);
+        const dateB = new Date(b.updated_at || b.created_at);
+        return dateB - dateA;
+      });
     },
   });
 
@@ -101,6 +106,23 @@ export default function SurveyResults() {
     },
   });
 
+  const { data: employees = [] } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select(`
+          *,
+          employee_positions(
+            position_id
+          )
+        `);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const visibleResponses = useMemo(() => {
     if (canViewAllResponses) return responses;
 
@@ -110,6 +132,50 @@ export default function SurveyResults() {
 
     return responses.filter((response) => response.employee_id === employee?.id);
   }, [responses, canViewAllResponses, hasPermission, survey, employee]);
+
+  const missingEmployees = useMemo(() => {
+    if (!survey) return [];
+
+    let targetEmployees = employees;
+
+    // Todos
+    if (survey.target_type === "all") {
+      targetEmployees = employees;
+    }
+
+    // Apenas setores
+    else if (survey.target_type === "sector") {
+      targetEmployees = employees.filter((emp) =>
+        survey.target_sector_ids?.includes(emp.sector_id)
+      );
+    }
+
+    // Apenas cargos
+    else if (survey.target_type === "position") {
+      targetEmployees = employees.filter((emp) =>
+        emp.employee_positions?.some((p) =>
+          survey.target_position_ids?.includes(p.position_id)
+        )
+      );
+    }
+
+    // Apenas utilizadores específicos
+    else if (survey.target_type === "specific") {
+      targetEmployees = employees.filter((emp) =>
+        survey.target_user_ids?.includes(emp.id)
+      );
+    }
+
+    // IDs de quem já respondeu
+    const respondedIds = new Set(
+      responses.map((r) => r.employee_id)
+    );
+
+    // Ficam apenas os que deviam responder e ainda não responderam
+    return targetEmployees.filter(
+      (emp) => !respondedIds.has(emp.id)
+    );
+  }, [survey, employees, responses]);
 
   const getAnswerValue = (response, questionId) => {
     const value = response.answers?.[questionId];
@@ -164,8 +230,12 @@ export default function SurveyResults() {
         emp?.email || "",
         emp?.sector?.name || "",
         positionNames,
-        response.created_at
-          ? format(new Date(response.created_at), "dd/MM/yyyy HH:mm", { locale: pt })
+        response.updated_at || response.created_at
+          ? format(
+              new Date(response.updated_at || response.created_at),
+              "dd/MM/yyyy HH:mm",
+              { locale: pt }
+            )
           : "",
         ...(survey.questions || []).map((question) =>
           getAnswerValue(response, question.id)
@@ -393,8 +463,12 @@ export default function SurveyResults() {
                         </TableCell>
 
                         <TableCell className="whitespace-nowrap text-xs">
-                          {response.created_at
-                            ? format(new Date(response.created_at), "dd/MM/yyyy HH:mm", { locale: pt })
+                          {response.updated_at || response.created_at
+                            ? format(
+                                new Date(response.updated_at || response.created_at),
+                                "dd/MM/yyyy HH:mm",
+                                { locale: pt }
+                              )
                             : "—"}
                         </TableCell>
 
