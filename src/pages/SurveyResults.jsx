@@ -73,10 +73,11 @@ export default function SurveyResults() {
 
       // Ordena pela data da última alteração (se existir)
       return (data || []).sort((a, b) => {
-        const dateA = new Date(a.updated_at || a.created_at);
-        const dateB = new Date(b.updated_at || b.created_at);
-        return dateB - dateA;
-      });
+        const numA = Number(a.employee?.employee_number || 0);
+        const numB = Number(b.employee?.employee_number || 0);
+
+        return numA - numB;
+      }); 
     },
   });
 
@@ -172,9 +173,11 @@ export default function SurveyResults() {
     );
 
     // Ficam apenas os que deviam responder e ainda não responderam
-    return targetEmployees.filter(
-      (emp) => !respondedIds.has(emp.id)
-    );
+    return targetEmployees
+      .filter((emp) => !respondedIds.has(emp.id))
+      .sort((a, b) =>
+        Number(a.employee_number || 0) - Number(b.employee_number || 0)
+      );
   }, [survey, employees, responses]);
 
   const getAnswerValue = (response, questionId) => {
