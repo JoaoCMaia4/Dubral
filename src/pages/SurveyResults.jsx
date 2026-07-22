@@ -308,6 +308,11 @@ export default function SurveyResults() {
             <Users className="w-4 h-4 mr-1" />
             Individual
           </TabsTrigger>
+
+          <TabsTrigger value="missing">
+            <Users className="w-4 h-4 mr-1" />
+            Não responderam ({missingEmployees.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="space-y-4 mt-4">
@@ -488,6 +493,45 @@ export default function SurveyResults() {
                         className="text-center py-8 text-muted-foreground"
                       >
                         Ainda não existem respostas.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="missing">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Funcionários que ainda não responderam
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nº</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {missingEmployees.length > 0 ? (
+                    missingEmployees.map((emp) => (
+                      <TableRow key={emp.id}>
+                        <TableCell>{emp.employee_number}</TableCell>
+                        <TableCell>{emp.full_name}</TableCell>
+                        <TableCell>{emp.email}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8">
+                        Todos os funcionários responderam.
                       </TableCell>
                     </TableRow>
                   )}
