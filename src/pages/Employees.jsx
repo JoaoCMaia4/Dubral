@@ -135,13 +135,19 @@ export default function Employees() {
           },
         });
 
+      console.log("Resposta invite-employee:", {
+        inviteData,
+        inviteError,
+      });
+
       if (inviteError) {
         console.error("Erro ao enviar convite:", inviteError);
 
-        throw new Error(
-          inviteError.message ||
-            "Funcionário criado, mas houve erro ao enviar o email de convite."
+        toast.warning(
+          "O funcionário foi criado, mas não foi possível confirmar o envio do email. Verifique se o colaborador recebeu o convite antes de tentar criar novamente."
         );
+
+        return employee;
       }
 
       if (inviteData?.error) {
@@ -150,26 +156,30 @@ export default function Employees() {
         const errorMessage = String(inviteData.error).toLowerCase();
 
         if (
-          errorMessage.includes("already been registered") ||
-          errorMessage.includes("already registered") ||
-          errorMessage.includes("already exists")
-        ) {
-          throw new Error(
-            "Este email já tem uma conta criada. Apague o utilizador em Authentication > Users ou use outro email."
-          );
-        }
+            errorMessage.includes("already been registered") ||
+            errorMessage.includes("already registered") ||
+            errorMessage.includes("already exists")
+          ) {
+            throw new Error(
+              "Este email já tem uma conta criada. Apague o utilizador em Authentication > Users ou use outro email."
+            );
+          }
 
-        if (errorMessage.includes("rate limit")) {
-          throw new Error(
-            "Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente."
-          );
-        }
+          if (errorMessage.includes("rate limit")) {
+            throw new Error(
+              "Limite de envio de emails atingido. Aguarde alguns minutos e tente novamente."
+            );
+          }
 
-        throw new Error(
-          inviteData.error ||
-            "Funcionário criado, mas houve erro ao enviar o email de convite."
-        );
-      }
+          // Em vez de dar erro, apenas avisa
+          console.warn("Não foi possível confirmar o envio do convite.");
+
+          toast.warning(
+            "O funcionário foi criado, mas não foi possível confirmar o envio do email. Verifique se o colaborador recebeu o convite antes de tentar criar novamente."
+          );
+
+          return employee;
+        }
 
       return employee;
     },
