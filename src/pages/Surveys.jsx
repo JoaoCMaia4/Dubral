@@ -386,7 +386,7 @@ export default function Surveys() {
             return (
               <Card key={survey.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5 text-primary" />
@@ -441,7 +441,7 @@ export default function Surveys() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 shrink-0 items-center">
+                    <div className="flex flex-wrap md:flex-nowrap gap-2 items-center">
                       {effectiveStatus === "active" &&
                         !hasResponded &&
                         isWithinDateRange(survey) && (
