@@ -97,6 +97,7 @@ export default function AppLayout() {
             positions={positions}
             collapsed={false}
             onToggle={() => setMobileOpen(false)}
+            onNavigate={() => setMobileOpen(false)}
             hasPermission={hasPermission}
           />
         </div>

@@ -437,11 +437,6 @@ export default function Surveys() {
                               })}
                             </span>
                           )}
-
-                          <span className="text-xs text-muted-foreground">
-                            · {survey.response_count || 0} resposta
-                            {survey.response_count !== 1 ? "s" : ""}
-                          </span>
                         </div>
                       </div>
                     </div>

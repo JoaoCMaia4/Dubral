@@ -45,7 +45,13 @@ const menuSections = [
   },
 ];
 
-export default function Sidebar({ user, positions, collapsed, onToggle }) {
+export default function Sidebar({
+    user,
+    positions,
+    collapsed,
+    onToggle,
+    onNavigate,
+}) {
   const location = useLocation();
 
   const isVisible = (item) => {
@@ -98,6 +104,7 @@ export default function Sidebar({ user, positions, collapsed, onToggle }) {
                     <Link
                       key={item.path}
                       to={item.path}
+                      onClick={() => onNavigate?.()}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                         active

@@ -153,7 +153,7 @@ serve(async (req) => {
     }
 
     const baseUrl = app_url || "https://dubral.vercel.app";
-    const surveyLink = `${baseUrl}/surveys/${survey.id}/respond`;
+    const surveyLink = baseUrl;
 
     const subject = `Novo questionário: ${survey.title}`;
 
@@ -177,14 +177,16 @@ serve(async (req) => {
               : ""
           }
 
-          <p>Para responder, clique no botão abaixo:</p>
+          <p>Foi criado um novo questionário na plataforma DUBRAL.</p>
+
+          <p>Clique no botão abaixo para aceder à plataforma e iniciar sessão.</p>
 
           <p style="margin: 24px 0;">
             <a
               href="${surveyLink}"
               style="background: #2563eb; color: white; padding: 12px 18px; border-radius: 8px; text-decoration: none; display: inline-block;"
             >
-              Responder questionário
+              Abrir plataforma
             </a>
           </p>
 

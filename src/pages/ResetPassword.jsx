@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleUpdatePassword = async (event) => {
@@ -45,12 +47,27 @@ export default function ResetPassword() {
           </p>
         </div>
 
-        <Input
-          type="password"
-          placeholder="Nova password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        <div className="relative">
+          <Input
+            type={showPassword ? "text" : "password"}
+            placeholder="Nova password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="pr-10"
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "A guardar..." : "Guardar nova password"}
