@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Download, BarChart3, Users, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  BarChart3,
+  Users,
+  Loader2,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -32,6 +40,7 @@ export default function SurveyResults() {
   const navigate = useNavigate();
   const { user, employee, hasPermission } = useOutletContext();
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const canViewAllResponses =
     hasPermission?.("total") ||
@@ -54,30 +63,61 @@ export default function SurveyResults() {
 
   const { data: responses = [], isLoading: isLoadingResponses } = useQuery({
     queryKey: ["surveyResponses", id],
+
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("survey_responses")
-        .select(`
+    // Respostas normais
+    const { data: normalResponses, error: normalError } = await supabase
+      .from("survey_responses")
+      .select(`
+        *,
+        employee:employees(
           *,
-          employee:employees(
-            *,
-            sector:sectors(*),
-            employee_positions(
-              position:positions(*)
-            )
+          sector:sectors(*),
+          employee_positions(
+            position:positions(*)
           )
-        `)
-        .eq("survey_id", id);
+        )
+      `)
+      .eq("survey_id", id);
 
-      if (error) throw error;
+    if (normalError) throw normalError;
 
-      // Ordena pela data da última alteração (se existir)
-      return (data || []).sort((a, b) => {
+    // Respostas manuais
+    const { data: manualResponses, error: manualError } = await supabase
+      .from("manual_survey_responses")
+      .select("*")
+      .eq("survey_id", id);
+
+    if (manualError) throw manualError;
+
+    const normal = (normalResponses || []).map((r) => ({
+      ...r,
+      is_manual: false,
+    }));
+
+    const manual = (manualResponses || []).map((r) => ({
+      ...r,
+      id: r.id,
+      is_manual: true,
+      employee: {
+        employee_number: r.employee_number,
+        full_name: r.employee_name,
+        email: "",
+        sector: null,
+        employee_positions: [],
+      },
+    }));
+
+    console.log("Normal Responses:", normalResponses);
+    console.log("Manual Responses:", manualResponses);
+    console.log("Normal:", normal);
+    console.log("Manual:", manual);
+
+      return [...normal, ...manual].sort((a, b) => {
         const numA = Number(a.employee?.employee_number || 0);
         const numB = Number(b.employee?.employee_number || 0);
-
         return numA - numB;
-      }); 
+      });
     },
   });
 
@@ -124,7 +164,48 @@ export default function SurveyResults() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (response) => {
+
+      if (response.is_manual) {
+
+        const { error } = await supabase
+          .from("manual_survey_responses")
+          .delete()
+          .eq("id", response.id);
+
+        if (error) throw error;
+
+      } else {
+
+        const { error } = await supabase
+          .from("survey_responses")
+          .delete()
+          .eq("id", response.id);
+
+        if (error) throw error;
+
+      }
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["surveyResponses", id],
+      });
+    },
+
+    onError: (error) => {
+      alert(error.message);
+      console.error(error);
+    },
+  });
+
   const visibleResponses = useMemo(() => {
+
+    console.log("responses:", responses);
+    console.log("canViewAllResponses:", canViewAllResponses);
+    console.log("employee:", employee);
+
     if (canViewAllResponses) return responses;
 
     if (hasPermission?.("view_own_results") && survey?.created_by_id === employee?.id) {
@@ -275,20 +356,38 @@ export default function SurveyResults() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/surveys")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+  <div className="max-w-5xl mx-auto space-y-6">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/surveys")}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
 
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{survey.title}</h1>
-            <p className="text-muted-foreground text-sm">
-              {visibleResponses.length} resposta{visibleResponses.length !== 1 ? "s" : ""}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {survey.title}
+          </h1>
+
+          <p className="text-muted-foreground text-sm">
+            {visibleResponses.length} resposta
+            {visibleResponses.length !== 1 ? "s" : ""}
+          </p>
         </div>
+      </div>
+
+      <div className="flex gap-2">
+        {canViewAllResponses && (
+          <Button
+            onClick={() => navigate(`/surveys/${id}/manual-response`)}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Inserir resposta
+          </Button>
+        )}
 
         <Button
           variant="outline"
@@ -299,6 +398,7 @@ export default function SurveyResults() {
           Exportar Excel/CSV
         </Button>
       </div>
+    </div>
 
       <Tabs defaultValue="summary">
         <TabsList>
@@ -429,6 +529,7 @@ export default function SurveyResults() {
                     <TableHead className="hidden lg:table-cell">Setor</TableHead>
                     <TableHead className="hidden lg:table-cell">Cargo(s)</TableHead>
                     <TableHead className="whitespace-nowrap">Data/Hora</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
 
                     {survey.questions?.map((question) => (
                       <TableHead key={question.id} className="min-w-[150px]">
@@ -478,6 +579,42 @@ export default function SurveyResults() {
                                 { locale: pt }
                               )
                             : "—"}
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+
+                            {response.is_manual && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  navigate(`/surveys/${id}/manual-response/${response.id}?manual=true`)
+                                }
+                              >
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Editar
+                              </Button>
+                            )}
+
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+
+                                if (
+                                  !window.confirm("Pretende eliminar esta resposta?")
+                                )
+                                  return;
+
+                                deleteMutation.mutate(response);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Eliminar
+                            </Button>
+
+                          </div>
                         </TableCell>
 
                         {survey.questions?.map((question) => (

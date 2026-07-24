@@ -21,6 +21,7 @@ import Dashboard from '@/pages/Dashboard';
 import Profile from '@/pages/Profile';
 import Employees from '@/pages/Employees';
 import Sectors from '@/pages/Sectors';
+import ManualSurveyResponse from "@/pages/ManualSurveyResponse";
 import Positions from '@/pages/Positions';
 import Surveys from '@/pages/Surveys';
 import SurveyBuilder from '@/pages/SurveyBuilder';
@@ -74,6 +75,8 @@ const AuthenticatedApp = () => {
           <Route path="/surveys/:id/edit" element={<SurveyBuilder />} />
           <Route path="/surveys/:id/respond" element={<SurveyRespond />} />
           <Route path="/surveys/:id/results" element={<SurveyResults />} />
+          <Route path="/surveys/:id/manual-response" element={<ManualSurveyResponse />} />
+          <Route path="/surveys/:id/manual-response/:responseId" element={<ManualSurveyResponse />}/>
           <Route path="/results" element={<Reports />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/reports" element={<Reports />} />
