@@ -498,7 +498,12 @@ export default function Surveys() {
                             </Button>
                           </DropdownMenuTrigger>
 
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent
+                            align="end"
+                            side="bottom"
+                            sideOffset={6}
+                            className="z-[9999] w-48"
+                          >
                             <DropdownMenuItem
                               onClick={() => navigate(`/surveys/${survey.id}/edit`)}
                             >
