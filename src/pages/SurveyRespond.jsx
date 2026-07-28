@@ -198,9 +198,22 @@ export default function SurveyRespond() {
                   <p className="font-medium text-sm">
                     {index + 1}. {question.title}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {Array.isArray(value) ? value.join(", ") : value || "—"}
-                  </p>
+
+                  {question.description && (
+                    <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line leading-relaxed">
+                      {question.description}
+                    </p>
+                  )}
+
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">
+                      A sua resposta
+                    </p>
+
+                    <p className="text-sm">
+                      {Array.isArray(value) ? value.join(", ") : value || "—"}
+                    </p>
+                  </div>
                 </div>
               );
             })}
