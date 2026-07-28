@@ -102,7 +102,7 @@ serve(async (req) => {
       );
     }
 
-    const { error: updateError } = await adminClient
+    const { error: employeeError } = await adminClient
       .from("employees")
       .update({
         auth_user_id: authUserId,
@@ -110,10 +110,10 @@ serve(async (req) => {
       })
       .eq("id", employee_id);
 
-    if (updateError) {
+    if (employeeError) {
       return new Response(
         JSON.stringify({
-          error: updateError.message,
+          error: employeeError.message,
         }),
         {
           status: 400,

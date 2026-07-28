@@ -24,6 +24,7 @@ export default function ResetPassword() {
 
         if (session) {
           console.log("SESSION READY");
+          window.history.replaceState({}, "", "/reset-password");
           setSessionReady(true);
           return;
         }
@@ -40,6 +41,8 @@ export default function ResetPassword() {
 
   const handleUpdatePassword = async (event) => {
     event.preventDefault();
+
+    if (isLoading) return;
 
     if (!password || password.length < 6) {
       toast.error("A password deve ter pelo menos 6 caracteres.");
@@ -59,22 +62,35 @@ export default function ResetPassword() {
 
     setIsLoading(true);
 
-    const { error } = await supabase.auth.updateUser({
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
 
-    console.log("UPDATE ERROR:", error);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
 
-    setIsLoading(false);
+      await supabase.auth.refreshSession();
 
-    if (error) {
-      toast.error(error.message || "Erro ao alterar password.");
-      return;
+      toast.success("Password alterada com sucesso.");
+
+      await supabase.auth.signOut();
+
+      navigate("/login");
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success("Password alterada com sucesso.");
-    navigate("/login");
   };
+
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">
+          A validar ligação...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
