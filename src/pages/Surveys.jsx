@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -79,6 +84,7 @@ export default function Surveys() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const isMobile = window.innerWidth < 768;
 
   const canCreate =
     hasPermission?.("total") ||
@@ -487,57 +493,112 @@ export default function Surveys() {
                       )}
 
                       {canManage && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                        isMobile ? (
 
-                          <DropdownMenuContent
-                            align="end"
-                            side="bottom"
-                            sideOffset={6}
-                            className="z-[9999] w-48"
-                          >
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/surveys/${survey.id}/edit`)}
-                            >
-                              <Edit3 className="w-4 h-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                              onClick={() => duplicateMutation.mutate(survey)}
-                            >
-                              <Copy className="w-4 h-4 mr-2" />
-                              Duplicar
-                            </DropdownMenuItem>
-
-                            {survey.status !== "archived" && (
-                              <DropdownMenuItem
-                                onClick={() => archiveMutation.mutate(survey.id)}
+                          <Drawer>
+                            <DrawerTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
                               >
-                                <Archive className="w-4 h-4 mr-2" />
-                                Arquivar
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DrawerTrigger>
+
+                            <DrawerContent className="pb-6">
+                              <div className="p-4 space-y-2">
+
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start"
+                                  onClick={() => navigate(`/surveys/${survey.id}/edit`)}
+                                >
+                                  <Edit3 className="w-4 h-4 mr-2" />
+                                  Editar
+                                </Button>
+
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start"
+                                  onClick={() => duplicateMutation.mutate(survey)}
+                                >
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Duplicar
+                                </Button>
+
+                                {survey.status !== "archived" && (
+                                  <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={() => archiveMutation.mutate(survey.id)}
+                                  >
+                                    <Archive className="w-4 h-4 mr-2" />
+                                    Arquivar
+                                  </Button>
+                                )}
+
+                                <Button
+                                  variant="destructive"
+                                  className="w-full"
+                                  onClick={() => setDeleteTarget(survey)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Apagar
+                                </Button>
+
+                              </div>
+                            </DrawerContent>
+                          </Drawer>
+
+                        ) : (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/surveys/${survey.id}/edit`)}
+                              >
+                                <Edit3 className="w-4 h-4 mr-2" />
+                                Editar
                               </DropdownMenuItem>
-                            )}
 
-                            <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => duplicateMutation.mutate(survey)}
+                              >
+                                <Copy className="w-4 h-4 mr-2" />
+                                Duplicar
+                              </DropdownMenuItem>
 
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setDeleteTarget(survey)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Apagar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              {survey.status !== "archived" && (
+                                <DropdownMenuItem
+                                  onClick={() => archiveMutation.mutate(survey.id)}
+                                >
+                                  <Archive className="w-4 h-4 mr-2" />
+                                  Arquivar
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuSeparator />
+
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => setDeleteTarget(survey)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Apagar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )
                       )}
                     </div>
                   </div>
