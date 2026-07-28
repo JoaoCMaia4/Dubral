@@ -216,6 +216,10 @@ export default function Surveys() {
   });
 
   const respondedIds = new Set(responses.map((response) => response.survey_id));
+
+  console.log("Respostas:", responses);
+  console.log("Respondidos:", respondedIds);
+
   const now = new Date();
 
   const isWithinDateRange = (survey) => {
@@ -263,6 +267,10 @@ export default function Surveys() {
       }
 
       const effectiveStatus = getEffectiveStatus(survey);
+      
+      if (respondedIds.has(survey.id)) {
+        return true;
+      }
 
       if (effectiveStatus !== "active") return false;
       if (!isWithinDateRange(survey)) return false;
@@ -442,30 +450,29 @@ export default function Surveys() {
                     </div>
 
                     <div className="flex flex-wrap md:flex-nowrap gap-2 items-center">
-                      {effectiveStatus === "active" &&
-                        !hasResponded &&
+                      {!hasResponded &&
+                        effectiveStatus === "active" &&
                         isWithinDateRange(survey) && (
                           <Link to={`/surveys/${survey.id}/respond`}>
-                            <Button size="sm">Responder</Button>
-                          </Link>
-                        )}
-
-                      {effectiveStatus === "active" &&
-                        hasResponded &&
-                        isWithinDateRange(survey) && (
-                          <Link to={`/surveys/${survey.id}/respond`}>
-                            <Button size="sm" variant="outline">
-                              Editar Resposta
+                            <Button size="sm">
+                              Responder
                             </Button>
                           </Link>
-                        )}
+                      )}
 
-                      {hasResponded &&
-                        (!isWithinDateRange(survey) ||
-                          effectiveStatus !== "active") && (
+                      {hasResponded && (
                           <Link to={`/surveys/${survey.id}/respond`}>
-                            <Button variant="outline" size="sm">
-                              Ver Resposta
+                            <Button
+                              size="sm"
+                              variant={
+                                effectiveStatus === "active" && isWithinDateRange(survey)
+                                  ? "outline"
+                                  : "secondary"
+                              }
+                            >
+                              {effectiveStatus === "active" && isWithinDateRange(survey)
+                                ? "Editar Resposta"
+                                : "Ver Resposta"}
                             </Button>
                           </Link>
                       )}
