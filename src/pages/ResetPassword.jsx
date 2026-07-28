@@ -1,29 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const waitForSession = async () => {
+      let tries = 0;
 
-      console.log("SESSION:", session);
-      console.log("URL:", window.location.href);
-    }
+      while (tries < 20) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-    checkSession();
+        if (session) {
+          console.log("SESSION READY");
+          setSessionReady(true);
+          return;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        tries++;
+      }
+
+      console.log("SESSION NOT FOUND");
+    };
+
+    waitForSession();
   }, []);
 
   const handleUpdatePassword = async (event) => {
@@ -31,6 +43,17 @@ export default function ResetPassword() {
 
     if (!password || password.length < 6) {
       toast.error("A password deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    console.log("SESSION:", session);
+
+    if (!session) {
+      toast.error("A sessão ainda não está pronta. Aguarde 2 segundos e tente novamente.");
       return;
     }
 
@@ -85,7 +108,7 @@ export default function ResetPassword() {
           </button>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading || !sessionReady}>
           {isLoading ? "A guardar..." : "Guardar nova password"}
         </Button>
       </form>
