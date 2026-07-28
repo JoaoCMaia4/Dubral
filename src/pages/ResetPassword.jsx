@@ -5,12 +5,26 @@ import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("SESSION:", session);
+      console.log("URL:", window.location.href);
+    }
+
+    checkSession();
+  }, []);
 
   const handleUpdatePassword = async (event) => {
     event.preventDefault();
@@ -25,6 +39,8 @@ export default function ResetPassword() {
     const { error } = await supabase.auth.updateUser({
       password,
     });
+
+    console.log("UPDATE ERROR:", error);
 
     setIsLoading(false);
 
